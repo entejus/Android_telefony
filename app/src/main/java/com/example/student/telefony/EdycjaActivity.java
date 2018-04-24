@@ -14,28 +14,42 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import java.util.regex.Pattern;
+
 public class EdycjaActivity extends AppCompatActivity {
 
     private EditText producent;
     private EditText model ;
     private EditText wersja;
     private EditText www ;
-    Button zapisz;
-    Button strona;
-    Button anuluj;
+    private Button zapisz;
+    private Button strona;
+    private Button anuluj;
 
     private boolean isEmpty(EditText string) {
         if (!string.getText().toString().equals(""))
             return false;
-
         return true;
     }
 
 
-    private boolean producentIsEmpty=true;
-    private boolean modelIsEmpty=true;
-    private boolean wersjaIsEmpty=true;
-    private boolean wwwIsEmpty=true;
+    private  static  boolean isValidVersion(String tekst)
+    {
+        return Pattern.compile("^(\\d+\\.)?(\\d+\\.)?(\\*|\\d+)$").matcher(tekst).matches();
+
+    }
+
+    private  static  boolean isValidAdress(String tekst)
+    {
+        return Pattern.compile("^(http\\:\\/\\/[a-zA-Z0-9_\\-]+(?:\\.[a-zA-Z0-9_\\-]+)*" +
+                "\\.[a-zA-Z]{2,4}(?:\\/[a-zA-Z0-9_]+)*(?:\\/[a-zA-Z0-9_]+\\.[a-zA-Z]{2,4}" +
+                "(?:\\?[a-zA-Z0-9_]+\\=[a-zA-Z0-9_]+)?)?(?:\\&[a-zA-Z0-9_]+\\=[a-zA-Z0-9_]+)*)$").matcher(tekst).matches();
+    }
+
+    private boolean producentIsCorrect=false;
+    private boolean modelIsCorrect=false;
+    private boolean wersjaIsCorrect=false;
+    private boolean wwwIsCorrect=false;
     private long    nrWiersza;
 
     @Override
@@ -54,7 +68,9 @@ public class EdycjaActivity extends AppCompatActivity {
             @Override
             public void onFocusChange(View v, boolean hasFocus) {
                 if(isEmpty(producent))
+                {
                     producent.setError("Wypełnij");
+                }
             }
         });
         model.setOnFocusChangeListener(new View.OnFocusChangeListener() {
@@ -67,15 +83,15 @@ public class EdycjaActivity extends AppCompatActivity {
         wersja.setOnFocusChangeListener(new View.OnFocusChangeListener() {
             @Override
             public void onFocusChange(View v, boolean hasFocus) {
-                if(isEmpty(wersja))
-                    wersja.setError("Wypełnij");
+                if(!isValidVersion(wersja.getText().toString()))
+                    wersja.setError("Podaj poprawną wersję");
             }
         });
         www.setOnFocusChangeListener(new View.OnFocusChangeListener() {
             @Override
             public void onFocusChange(View v, boolean hasFocus) {
-                if(isEmpty(www))
-                    www.setError("Wypełnij");
+                if(!isValidAdress(www.getText().toString()))
+                    www.setError("Podaj poprawny adres");
             }
         });
 
@@ -89,10 +105,10 @@ public class EdycjaActivity extends AppCompatActivity {
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 if(isEmpty(producent))
                 {
-                    producentIsEmpty=true;
+                    producentIsCorrect=false;
                 }
                 else {
-                    producentIsEmpty = false;
+                    producentIsCorrect = true;
                 }
             }
 
@@ -111,10 +127,10 @@ public class EdycjaActivity extends AppCompatActivity {
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 if(isEmpty(model))
                 {
-                    modelIsEmpty=true;
+                    modelIsCorrect=false;
                 }
                 else {
-                    modelIsEmpty = false;
+                    modelIsCorrect = true;
                 }
             }
 
@@ -131,12 +147,12 @@ public class EdycjaActivity extends AppCompatActivity {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                if(isEmpty(wersja))
+                if(isValidVersion(wersja.getText().toString()))
                 {
-                    wersjaIsEmpty=true;
+                    wersjaIsCorrect=true;
                 }
                 else {
-                    wersjaIsEmpty = false;
+                    wersjaIsCorrect = false;
                 }
             }
 
@@ -153,12 +169,12 @@ public class EdycjaActivity extends AppCompatActivity {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                if(isEmpty(www))
+                if(isValidAdress(www.getText().toString()))
                 {
-                    wwwIsEmpty=true;
+                    wwwIsCorrect=true;
                 }
                 else {
-                    wwwIsEmpty = false;
+                    wwwIsCorrect = false;
                 }
             }
 
@@ -177,20 +193,19 @@ public class EdycjaActivity extends AppCompatActivity {
         {
             wypelnijPola();
         }
-       // czyWypelnione();
 
         zapisz.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(!producentIsEmpty && !modelIsEmpty && !wersjaIsEmpty && !wwwIsEmpty) {
+                if(producentIsCorrect && modelIsCorrect && wersjaIsCorrect && wwwIsCorrect) {
                     if(nrWiersza != -1)
                         edytujWartosc();
                     else
                         dodajWartosc();
-                        zapisz.setVisibility(View.GONE);
+                    zapisz.setVisibility(View.GONE);
                 }
                 else
-                    Toast.makeText(EdycjaActivity.this, "Wypełnij wszystkie pola", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(EdycjaActivity.this, "Wypełnij poprawnie wszystkie pola", Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -256,6 +271,8 @@ public class EdycjaActivity extends AppCompatActivity {
         wartosci.put(PomocnikBD.WWW,www.getText().toString());
 
         getContentResolver().update(TelefonyProvider.URI_ZAWARTOSCI,wartosci,selekcja,null);
+        Toast.makeText(this, "Zapisano", Toast.LENGTH_SHORT).show();
+
     }
 
     private void wypelnijPola()
@@ -271,6 +288,5 @@ public class EdycjaActivity extends AppCompatActivity {
         wersja.setText(kursor.getString(kursor .getColumnIndexOrThrow(PomocnikBD.WERSJA_ANDROID)));
         www.setText(kursor.getString(kursor .getColumnIndexOrThrow(PomocnikBD.WWW)));
         kursor.close();
-
     }
 }
