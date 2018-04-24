@@ -69,7 +69,7 @@ public class EdycjaActivity extends AppCompatActivity {
             public void onFocusChange(View v, boolean hasFocus) {
                 if(isEmpty(producent))
                 {
-                    producent.setError("Wypełnij");
+                    producent.setError("Wypełnij!");
                 }
             }
         });
